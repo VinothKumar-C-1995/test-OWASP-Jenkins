@@ -2,6 +2,10 @@ pipeline {
 
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     tools {
         maven 'Maven3'
     }
@@ -10,7 +14,8 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/VinothKumar-C-1995/test-OWASP-Jenkins'
+                git branch: 'main',
+                    url: 'https://github.com/VinothKumar-C-1995/test-OWASP-Jenkins'
             }
         }
 
@@ -22,8 +27,10 @@ pipeline {
 
         stage('OWASP Scan') {
             steps {
-                dependencyCheck additionalArguments: '--scan .',
-                                odcInstallation: 'DependencyCheck'
+                dependencyCheck(
+                    odcInstallation: 'DependencyCheck',
+                    additionalArguments: '--scan .'
+                )
             }
         }
 
@@ -32,7 +39,5 @@ pipeline {
                 dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
-
     }
-
 }
