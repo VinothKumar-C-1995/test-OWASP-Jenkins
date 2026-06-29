@@ -18,16 +18,11 @@ pipeline {
             }
         }
 
-        stage('OWASP Dependency Check') {
+        stage('OWASP Scan') {
             steps {
                 dependencyCheck(
                     odcInstallation: 'DependencyCheck',
-                    additionalArguments: """
-                        --scan .
-                        --format HTML
-                        --format XML
-                        --nvdApiKey ${NVD_API_KEY}
-                    """
+                    additionalArguments: '--scan . --format HTML --format XML --nvdApiKey=$NVD_API_KEY --nvdApiDelay 8000 --nvdMaxRetryCount 50'
                 )
             }
         }
@@ -38,22 +33,6 @@ pipeline {
                     pattern: '**/dependency-check-report.xml'
                 )
             }
-        }
-
-    }
-
-    post {
-
-        always {
-            archiveArtifacts artifacts: '**/dependency-check-report.*', fingerprint: true
-        }
-
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed.'
         }
     }
 }
