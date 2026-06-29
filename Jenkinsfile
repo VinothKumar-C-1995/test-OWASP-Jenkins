@@ -2,22 +2,15 @@ pipeline {
 
     agent any
 
-    options {
-        skipDefaultCheckout(true)
-    }
-
     tools {
         maven 'Maven3'
     }
 
-    stages {
+    environment {
+        NVD_API_KEY = credentials('nvd-api-key')
+    }
 
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/VinothKumar-C-1995/test-OWASP-Jenkins'
-            }
-        }
+    stages {
 
         stage('Build') {
             steps {
@@ -25,19 +18,42 @@ pipeline {
             }
         }
 
-        stage('OWASP Scan') {
+        stage('OWASP Dependency Check') {
             steps {
                 dependencyCheck(
                     odcInstallation: 'DependencyCheck',
-                    additionalArguments: '--scan .'
+                    additionalArguments: """
+                        --scan .
+                        --format HTML
+                        --format XML
+                        --nvdApiKey ${NVD_API_KEY}
+                    """
                 )
             }
         }
 
         stage('Publish Report') {
             steps {
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                dependencyCheckPublisher(
+                    pattern: '**/dependency-check-report.xml'
+                )
             }
+        }
+
+    }
+
+    post {
+
+        always {
+            archiveArtifacts artifacts: '**/dependency-check-report.*', fingerprint: true
+        }
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
